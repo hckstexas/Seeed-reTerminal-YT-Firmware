@@ -1,4 +1,5 @@
 #include "youtube_stats.h"
+#include "runtime_config.h"
 
     #include <cstring>
     #include <string>
@@ -44,10 +45,10 @@
       }
     }
 
-    bool ensure_wifi(char *error_message, uint32_t error_message_size)
+    bool ensure_wifi(const YoutubeConfig &config, char *error_message, uint32_t error_message_size)
     {
       if (s_wifi_ready) return true;
-      if (std::strlen(CONFIG_YOUTUBE_WIFI_SSID) == 0) {
+      if (config.wifi_ssid[0] == '\0') {
           set_error(error_message, error_message_size, "Wi-Fi SSID is not configured");
           return false;
       }
@@ -77,8 +78,8 @@
           esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, nullptr);
           esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, nullptr);
           wifi_config_t wifi_config = {};
-          std::strncpy(reinterpret_cast<char *>(wifi_config.sta.ssid), CONFIG_YOUTUBE_WIFI_SSID, sizeof(wifi_config.sta.ssid) - 1);
-          std::strncpy(reinterpret_cast<char *>(wifi_config.sta.password), CONFIG_YOUTUBE_WIFI_PASSWORD, sizeof(wifi_config.sta.password) - 1);
+          std::strncpy(reinterpret_cast<char *>(wifi_config.sta.ssid), config.wifi_ssid, sizeof(wifi_config.sta.ssid) - 1);
+          std::strncpy(reinterpret_cast<char *>(wifi_config.sta.password), config.wifi_password, sizeof(wifi_config.sta.password) - 1);
           esp_wifi_set_mode(WIFI_MODE_STA);
           esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
           esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
@@ -106,18 +107,18 @@
     }
     }
 
-    bool fetch_youtube_stats(YoutubeStats &stats, char *error_message, uint32_t error_message_size)
+    bool fetch_youtube_stats(const YoutubeConfig &config, YoutubeStats &stats, char *error_message, uint32_t error_message_size)
     {
       stats = {};
-      if (!ensure_wifi(error_message, error_message_size)) return false;
-      if (std::strlen(CONFIG_YOUTUBE_API_BASE_URL) == 0) {
+      if (!ensure_wifi(config, error_message, error_message_size)) return false;
+      if (config.endpoint[0] == '\0') {
           set_error(error_message, error_message_size, "HTTPS endpoint is not configured");
           return false;
       }
 
-      std::string url = CONFIG_YOUTUBE_API_BASE_URL;
+      std::string url = config.endpoint;
       url += std::strchr(url.c_str(), '?') == nullptr ? "?channel=" : "&channel=";
-      url += CONFIG_YOUTUBE_CHANNEL;
+      url += config.channel;
       esp_http_client_config_t config = {};
       config.url = url.c_str();
       config.timeout_ms = 15000;
