@@ -1,0 +1,28 @@
+{
+    "id": "youtube-sticky-display",
+    "name": "YouTube Sticky Display",
+    "version": "0.1.0",
+    "author": "HcksTexas",
+    "description": "PB J Squad YouTube subscribers, views, and video count for reTerminal Sticky.",
+    "mode": "flash",
+    "source": {
+      "url": "https://github.com/hckstexas/Seeed-reTerminal-YT-Firmware.git",
+      "path": "."
+    },
+    "build": {
+      "framework": "esp-idf",
+      "target": "esp32s3",
+      "flash_size": "16MB"
+    },
+    "hardware": {
+      "display": "SSD1677 800x480 E-Ink",
+      "touch": "GT911",
+      "orientation": "landscape"
+    },
+    "notes": [
+      "Requires a deployed HTTPS YouTube proxy endpoint.",
+      "Do not compile a YouTube API key into the firmware.",
+      "Experimental until tested on physical reTerminal Sticky hardware."
+    ]
+    }
+    
