@@ -8,7 +8,9 @@
 
     ## Build and flash
 
-    Use ESP-IDF v5.4 or newer with the ESP32-S3 target. Run idf.py set-target esp32s3, idf.py menuconfig, and configure the YouTube Sticky menu with Wi-Fi SSID, Wi-Fi password, the deployed HTTPS stats endpoint, and the channel ID or @handle. Then run idf.py build and idf.py -p PORT flash monitor.
+    Use ESP-IDF v5.4 or newer with the ESP32-S3 target. On the first boot, the firmware starts a setup access point named Sticky-YT with password stickysetup. Connect a phone or laptop to that network and open http://192.168.4.1. Enter the normal Wi-Fi credentials, the deployed HTTPS stats endpoint, and the channel ID or @handle; the values are stored in NVS and the Sticky restarts.
+
+For developer builds, ESP-IDF v5.4 or newer can also seed these values through idf.py menuconfig under the YouTube Sticky menu. Run idf.py set-target esp32s3, then idf.py build and idf.py -p PORT flash monitor.
 
     The first refresh occurs at boot. A successful refresh is repeated every five minutes. A short press on the power/OK button or a touchscreen tap requests an immediate refresh. The display uses a one-bit framebuffer so it is safe for the panel's native black-and-white mode; the visual layout is constrained to 800 x 480.
 
