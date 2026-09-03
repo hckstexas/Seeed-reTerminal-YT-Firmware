@@ -45,52 +45,29 @@ void url_decode(char *value) {
     *write = '\0';
 }
 
-void form_value(char *body, const char *key, char *destination, size_t size) {
-    destination[0] = '\0';
-    const size_t key_length = std::strlen(key);
-    for (char *part = std::strtok(body, "&"); part != nullptr; part = std::strtok(nullptr, "&")) {
-        if (std::strncmp(part, key, key_length) == 0 && part[key_length] == '=') {
-            url_decode(part + key_length + 1);
-            copy_value(destination, size, part + key_length + 1);
-            return;
-        }
+void form_value(const char *body, const char *key, char *destination, size_t size) {
+      destination[0] = '\0';
+      const size_t key_length = std::strlen(key);
+      const char *cursor = body;
+      while (cursor != nullptr && *cursor != '\0') {
+          const char *equals = std::strchr(cursor, '=');
+          const char *ampersand = std::strchr(cursor, '&');
+          if (equals != nullptr && static_cast<size_t>(equals - cursor) == key_length && std::strncmp(cursor, key, key_length) == 0) {
+              const char *value_start = equals + 1;
+              const size_t value_length = ampersand == nullptr ? std::strlen(value_start) : static_cast<size_t>(ampersand - value_start);
+              char value[1024] = {};
+              const size_t copy_length = value_length < sizeof(value) - 1 ? value_length : sizeof(value) - 1;
+              std::memcpy(value, value_start, copy_length);
+              value[copy_length] = '\0';
+              url_decode(value);
+              copy_value(destination, size, value);
+              return;
+          }
+          cursor = ampersand == nullptr ? nullptr : ampersand + 1;
+      }
     }
-}
 
-httpd_handle_t start_http_server();
-
-esp_err_t index_handler(httpd_req_t *request) {
-    static const char html[] = "<!doctype html><html><head><meta name=viewport content='width=device-width,initial-scale=1'><title>Sticky YouTube setup</title></head><body style='font:16px sans-serif;max-width:520px;margin:2rem auto;padding:0 1rem'><h1>Sticky YouTube setup</h1><p>Enter Wi-Fi and your deployed HTTPS YouTube proxy endpoint.</p><form method=post action=/save><label>Wi-Fi SSID<br><input name=ssid required maxlength=32 style='width:100%'></label><br><label>Wi-Fi password<br><input name=password type=password maxlength=64 style='width:100%'></label><br><label>HTTPS stats endpoint<br><input name=endpoint type=url required placeholder='https://your-domain/api/youtube/stats' style='width:100%'></label><br><label>YouTube channel ID or @handle<br><input name=channel value='@PBJSquad' required maxlength=96 style='width:100%'></label><br><button type=submit>Save and restart Sticky</button></form></body></html>";
-    httpd_resp_set_type(request, "text/html; charset=utf-8");
-    return httpd_resp_send(request, html, HTTPD_RESP_USE_STRLEN);
-}
-
-esp_err_t save_handler(httpd_req_t *request) {
-    char body[1024] = {};
-    const int expected = request->content_len;
-    if (expected <= 0 || expected >= static_cast<int>(sizeof(body))) return httpd_resp_send_err(request, HTTPD_400_BAD_REQUEST, "Form is too large");
-    int received = 0;
-    while (received < expected) {
-        const int count = httpd_req_recv(request, body + received, expected - received);
-        if (count <= 0) return httpd_resp_send_err(request, HTTPD_400_BAD_REQUEST, "Could not read form");
-        received += count;
-    }
-    body[received] = '\0';
-    YoutubeConfig config;
-    form_value(body, "ssid", config.wifi_ssid, sizeof(config.wifi_ssid));
-    form_value(body, "password", config.wifi_password, sizeof(config.wifi_password));
-    form_value(body, "endpoint", config.endpoint, sizeof(config.endpoint));
-    form_value(body, "channel", config.channel, sizeof(config.channel));
-    if (!config.ready() || !save_youtube_config(config)) return httpd_resp_send_err(request, HTTPD_500_INTERNAL_SERVER_ERROR, "Could not save configuration");
-    const char response[] = "Saved. Restarting Sticky now.";
-    httpd_resp_set_type(request, "text/plain; charset=utf-8");
-    httpd_resp_send(request, response, HTTPD_RESP_USE_STRLEN);
-    vTaskDelay(pdMS_TO_TICKS(500));
-    esp_restart();
-    return ESP_OK;
-}
-
-bool start_ap() {
+    bool start_ap() {
     esp_err_t err = esp_netif_init();
     if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) return false;
     err = esp_event_loop_create_default();
