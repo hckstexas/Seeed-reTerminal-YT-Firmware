@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="480" viewBox="0 0 800 480">
+    <rect width="800" height="480" fill="#f4f4f0"/>
+    <rect x="8" y="8" width="784" height="464" rx="6" fill="#fff" stroke="#111" stroke-width="3"/>
+    <text x="25" y="56" font-family="Arial, sans-serif" font-size="32" font-weight="700" fill="#111">PB J SQUAD</text>
+    <text x="28" y="84" font-family="Arial, sans-serif" font-size="18" fill="#444">YOUTUBE CHANNEL</text>
+    <line x1="25" y1="100" x2="775" y2="100" stroke="#111" stroke-width="3"/>
+    <text x="400" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#111">SUBSCRIBERS</text>
+    <text x="400" y="220" text-anchor="middle" font-family="Arial, sans-serif" font-size="72" font-weight="700" fill="#111">123,456</text>
+    <line x1="42" y1="250" x2="758" y2="250" stroke="#111" stroke-width="2"/>
+    <text x="67" y="294" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#111">VIEWS</text>
+    <text x="67" y="342" font-family="Arial, sans-serif" font-size="32" fill="#111">12,345,678</text>
+    <text x="450" y="294" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#111">VIDEOS</text>
+    <text x="450" y="342" font-family="Arial, sans-serif" font-size="32" fill="#111">42</text>
+    <line x1="42" y1="384" x2="758" y2="384" stroke="#111" stroke-width="2"/>
+    <text x="400" y="425" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#111">AUTO REFRESH 5 MIN</text>
+    <text x="400" y="452" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#555">TAP OR PRESS BUTTON TO REFRESH</text>
+    </svg>
+    
