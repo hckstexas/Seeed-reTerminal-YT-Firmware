@@ -1,28 +1,70 @@
 {
+    "schemaVersion": 1,
     "id": "youtube-sticky-display",
     "name": "YouTube Sticky Display",
-    "version": "0.1.0",
-    "author": "HcksTexas",
-    "description": "PB J Squad YouTube subscribers, views, and video count for reTerminal Sticky.",
+    "group": "community",
+    "catalogSection": "community",
+    "category": "tools",
     "mode": "flash",
+    "status": "experimental",
+    "summary": "PB J Squad YouTube subscribers, views, and video count on reTerminal Sticky.",
+    "description": "A native ESP32-S3 firmware that renders PB J Squad YouTube channel totals on the reTerminal Sticky's 800x480 E-Ink display. It uses a deployed HTTPS proxy so the YouTube API key stays server-side.",
+    "author": {
+      "name": "HcksTexas",
+      "url": "https://github.com/hckstexas"
+    },
+    "origin": {
+      "name": "Seeed reTerminal YT Firmware",
+      "url": "https://github.com/hckstexas/Seeed-reTerminal-YT-Firmware"
+    },
     "source": {
       "url": "https://github.com/hckstexas/Seeed-reTerminal-YT-Firmware.git",
       "path": "."
     },
+    "support": {
+      "url": "https://github.com/hckstexas/Seeed-reTerminal-YT-Firmware/issues"
+    },
+    "documentationUrl": "https://github.com/hckstexas/Seeed-reTerminal-YT-Firmware#readme",
+    "compatibility": {
+      "devices": [
+        "reterminal-sticky"
+      ],
+      "notes": "ESP32-S3 with SSD1677 800x480 E-Ink panel and GT911 touch controller. Experimental until physically tested."
+    },
+    "assets": {
+      "preview": "assets/preview.svg",
+      "previewAlt": "YouTube channel totals rendered on a reTerminal Sticky"
+    },
+    "tags": [
+      "youtube",
+      "statistics",
+      "pb-j",
+      "e-ink"
+    ],
     "build": {
-      "framework": "esp-idf",
+      "system": "esp-idf",
+      "version": "v5.4",
       "target": "esp32s3",
-      "flash_size": "16MB"
+      "projectPath": "."
     },
-    "hardware": {
-      "display": "SSD1677 800x480 E-Ink",
-      "touch": "GT911",
-      "orientation": "landscape"
-    },
-    "notes": [
-      "Requires a deployed HTTPS YouTube proxy endpoint.",
-      "Do not compile a YouTube API key into the firmware.",
-      "Experimental until tested on physical reTerminal Sticky hardware."
-    ]
+    "flash": {
+      "versions": [
+        {
+          "version": "0.1.0",
+          "channel": "experimental",
+          "sourceBuild": true
+        }
+      ],
+      "notes": [
+        {
+          "title": "Configure before flashing",
+          "description": "Set Wi-Fi credentials, the deployed HTTPS stats endpoint, and the YouTube channel ID or @handle in ESP-IDF menuconfig before building."
+        },
+        {
+          "title": "Stock firmware recovery",
+          "description": "Flashing replaces the installed firmware. Keep the official stock recovery image available while testing."
+        }
+      ]
+    }
     }
     
