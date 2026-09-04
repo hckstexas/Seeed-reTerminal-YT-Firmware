@@ -3,8 +3,7 @@
 #include <cstdint>
 
 #include "hardware/sticky_display.h"
-#include "hardware/sticky_orientation.h"
-#include "hardware/sticky_sensors.h"
+#include "hardware/sticky_local_peripherals.h"
 
 enum class StickyScreen : uint8_t {
     Home = 0,
@@ -22,7 +21,6 @@ StickyScreen next_screen(StickyScreen screen);
 const char *screen_title(StickyScreen screen);
 
 void render_home_screen(StickyDisplay &display, StickyScreen selected_screen);
-void render_clock_screen(StickyDisplay &display, const StickyClockReading &reading);
-void render_environment_screen(StickyDisplay &display, const StickyEnvironmentReading &reading);
-void render_power_screen(StickyDisplay &display, const StickyPowerReading &reading);
-void render_motion_screen(StickyDisplay &display, const StickyMotionReading &reading);
+void render_local_screen(StickyDisplay &display,
+                         StickyScreen screen,
+                         const StickyLocalData &data);

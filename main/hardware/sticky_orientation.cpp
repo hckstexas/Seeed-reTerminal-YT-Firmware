@@ -32,14 +32,13 @@ bool StickyOrientation::init(i2c_master_bus_handle_t bus)
 {
     if (bus == nullptr) return false;
 
-    esp_err_t err = ESP_FAIL;
     for (const uint8_t address : {0x6A, 0x6B}) {
         i2c_device_config_t device_config = {};
         device_config.dev_addr_length = I2C_ADDR_BIT_LEN_7;
         device_config.device_address = address;
         device_config.scl_speed_hz = 400000;
 
-        err = i2c_master_bus_add_device(bus, &device_config, &device_);
+        const esp_err_t err = i2c_master_bus_add_device(bus, &device_config, &device_);
         if (err != ESP_OK) continue;
 
         uint8_t who_am_i = 0;
@@ -72,16 +71,16 @@ bool StickyOrientation::update(DisplayOrientation &orientation)
 {
     if (device_ == nullptr) return false;
 
-    StickyMotionReading reading;
-    if (!read_motion(reading)) return false;
+    StickyMotionSample sample;
+    if (!read_motion(sample)) return false;
 
-    if (std::abs(reading.gyro_z) > kGyroscopeMovingThreshold) {
+    if (std::abs(sample.gyro_z) > kGyroscopeMovingThreshold) {
         candidate_since_ = xTaskGetTickCount();
         return false;
     }
 
     const DisplayOrientation detected =
-        std::abs(reading.accel_x) > std::abs(reading.accel_y)
+        std::abs(sample.accel_x) > std::abs(sample.accel_y)
             ? DisplayOrientation::Portrait
             : DisplayOrientation::Landscape;
     if (detected != candidate_) {
@@ -102,6 +101,12 @@ bool StickyOrientation::update(DisplayOrientation &orientation)
     return false;
 }
 
+bool StickyOrientation::read_sample(StickyMotionSample &sample)
+{
+    if (device_ == nullptr) return false;
+    return read_motion(sample);
+}
+
 bool StickyOrientation::read_register(uint8_t reg, uint8_t *data, size_t length)
 {
     if (device_ == nullptr) return false;
@@ -115,18 +120,16 @@ bool StickyOrientation::write_register(uint8_t reg, uint8_t value)
     return i2c_master_transmit(device_, payload, sizeof(payload), 100) == ESP_OK;
 }
 
-bool StickyOrientation::read_motion(StickyMotionReading &reading)
+bool StickyOrientation::read_motion(StickyMotionSample &sample)
 {
-    reading = {};
     uint8_t data[12] = {};
     if (!read_register(kMotionDataRegister, data, sizeof(data))) return false;
 
-    reading.gyro_x = little_endian_int16(data);
-    reading.gyro_y = little_endian_int16(data + 2);
-    reading.gyro_z = little_endian_int16(data + 4);
-    reading.accel_x = little_endian_int16(data + 6);
-    reading.accel_y = little_endian_int16(data + 8);
-    reading.accel_z = little_endian_int16(data + 10);
-    reading.valid = true;
+    sample.gyro_x = little_endian_int16(data + 0);
+    sample.gyro_y = little_endian_int16(data + 2);
+    sample.gyro_z = little_endian_int16(data + 4);
+    sample.accel_x = little_endian_int16(data + 6);
+    sample.accel_y = little_endian_int16(data + 8);
+    sample.accel_z = little_endian_int16(data + 10);
     return true;
 }
