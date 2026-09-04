@@ -72,11 +72,24 @@
       if (framebuffer_ != nullptr) std::memset(framebuffer_, white ? 0xFF : 0x00, kBufferSize);
     }
 
+    void StickyDisplay::set_orientation(DisplayOrientation orientation)
+    {
+      orientation_ = orientation;
+    }
+
     void StickyDisplay::draw_pixel(int x, int y, bool black)
     {
-      if (framebuffer_ == nullptr || x < 0 || x >= kWidth || y < 0 || y >= kHeight) return;
-      uint8_t &byte = framebuffer_[y * kStrideBytes + x / 8];
-      const uint8_t mask = static_cast<uint8_t>(0x80U >> (x % 8));
+      if (framebuffer_ == nullptr || x < 0 || x >= width() || y < 0 || y >= height()) return;
+
+      int physical_x = x;
+      int physical_y = y;
+      if (orientation_ == DisplayOrientation::Portrait) {
+          physical_x = kWidth - 1 - y;
+          physical_y = x;
+      }
+
+      uint8_t &byte = framebuffer_[physical_y * kStrideBytes + physical_x / 8];
+      const uint8_t mask = static_cast<uint8_t>(0x80U >> (physical_x % 8));
       if (black) byte &= static_cast<uint8_t>(~mask);
       else byte |= mask;
     }

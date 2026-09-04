@@ -5,12 +5,21 @@
     #include "driver/spi_master.h"
     #include "epaper_panel.h"
 
+    enum class DisplayOrientation {
+      Landscape,
+      Portrait,
+    };
+
     class StickyDisplay {
     public:
       static constexpr int kWidth = 800;
       static constexpr int kHeight = 480;
 
       bool init();
+      void set_orientation(DisplayOrientation orientation);
+      DisplayOrientation orientation() const { return orientation_; }
+      int width() const { return orientation_ == DisplayOrientation::Portrait ? kHeight : kWidth; }
+      int height() const { return orientation_ == DisplayOrientation::Portrait ? kWidth : kHeight; }
       void clear(bool white = true);
       void draw_pixel(int x, int y, bool black = true);
       void draw_rect(int x, int y, int width, int height, bool black = true);
@@ -26,5 +35,6 @@
       spi_device_handle_t spi_device_ = nullptr;
       seeed_epaper_panel_handle_t panel_ = nullptr;
       uint8_t *framebuffer_ = nullptr;
+      DisplayOrientation orientation_ = DisplayOrientation::Landscape;
     };
     

@@ -14,7 +14,11 @@ Use ESP-IDF v5.4 or newer with the ESP32-S3 target. On the first boot, the firmw
 
 For developer builds, ESP-IDF v5.4 or newer can also seed Wi-Fi, the API key, and channel through idf.py menuconfig under the YouTube Sticky menu. Do not commit a personal key to sdkconfig or source control. Run idf.py set-target esp32s3, then idf.py build and idf.py -p PORT flash monitor.
 
-The first refresh occurs at boot. A successful refresh is repeated every five minutes. A short press on the power/OK button or a touchscreen tap requests an immediate refresh. The display uses a one-bit framebuffer so it is safe for the panel's native black-and-white mode; the visual layout is constrained to 800 x 480.
+The first refresh occurs at boot. A successful refresh is repeated every five minutes. A short press on the power/OK button or a touchscreen tap requests an immediate refresh. The current expansion milestone also enables the Up and Down buttons on GPIO5 and GPIO6, plus a launcher with placeholder pages for Clock, Environment, Power, and Motion. A long press on the grey button returns to Home, and touch swipes move between pages.
+
+The display renderer supports both the native 800 x 480 landscape canvas and a rotated 480 x 800 portrait canvas. The LSM6DS3TR-C on the sensor bus is used to detect stable device orientation: accelerometer tilt selects the orientation and gyro motion is used to wait for the device to settle before rotating the display. This orientation path is experimental until it is verified on physical hardware.
+
+The display uses a one-bit framebuffer so it is safe for the panel's native black-and-white mode; all screens must use the display's logical width and height rather than assuming landscape dimensions.
 
 ## Safety and recovery
 

@@ -28,7 +28,7 @@
 
     void centered(StickyDisplay &display, int y, const std::string &value, int scale)
     {
-      text(display, std::max(8, (StickyDisplay::kWidth - text_width(value, scale)) / 2), y, value, scale);
+      text(display, std::max(8, (display.width() - text_width(value, scale)) / 2), y, value, scale);
     }
 
     std::string comma_number(uint64_t value)
@@ -42,7 +42,33 @@
     void render_youtube_screen(StickyDisplay &display, const YoutubeStats &stats, const char *status_message)
     {
       display.clear(true);
-      display.draw_rect(7, 7, 786, 466, true);
+      display.draw_rect(7, 7, display.width() - 14, display.height() - 14, true);
+
+      if (display.orientation() == DisplayOrientation::Portrait) {
+          centered(display, 24, "PB J SQUAD", 3);
+          centered(display, 61, stats.valid && stats.channel_title[0] != '\0' ? stats.channel_title : "YOUTUBE CHANNEL", 2);
+          fill_rect(display, 25, 88, display.width() - 50, 3, true);
+
+          if (!stats.valid) {
+              centered(display, 180, "WAITING FOR DATA", 2);
+              centered(display, 235, status_message == nullptr ? "CHECK CONFIGURATION" : status_message, 1);
+              centered(display, 300, "PRESS BUTTON TO RETRY", 1);
+              return;
+          }
+
+          centered(display, 125, "SUBSCRIBERS", 2);
+          centered(display, 157, comma_number(stats.subscribers), 4);
+          fill_rect(display, 45, 220, display.width() - 90, 2, true);
+          centered(display, 250, "VIEWS", 2);
+          centered(display, 282, comma_number(stats.views), 3);
+          centered(display, 390, "VIDEOS", 2);
+          centered(display, 422, comma_number(stats.videos), 3);
+          fill_rect(display, 45, 475, display.width() - 90, 2, true);
+          centered(display, 515, "AUTO REFRESH 5 MIN", 2);
+          centered(display, 555, "TAP OR PRESS TO REFRESH", 1);
+          return;
+      }
+
       text(display, 25, 23, "PB J SQUAD", 3);
       text(display, 28, 61, stats.valid && stats.channel_title[0] != '\0' ? stats.channel_title : "YOUTUBE CHANNEL", 2);
       fill_rect(display, 25, 86, 750, 3, true);

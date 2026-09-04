@@ -1,4 +1,4 @@
-™¨§þ«w«{û-‰É2nëm¢{!#pragma once
+#pragma once
 
 #include <atomic>
 #include <cstdint>

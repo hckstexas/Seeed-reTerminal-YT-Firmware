@@ -1,4 +1,4 @@
-™¨§þv¯Š­Š‰ï‰ì!#pragma once
+#pragma once
 
 #include <cstdint>
 
