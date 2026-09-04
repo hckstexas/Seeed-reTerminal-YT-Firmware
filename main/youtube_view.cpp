@@ -76,7 +76,7 @@ void draw_olivia(StickyDisplay &display, int x, int y, int x_scale, int y_scale)
           const int hero_top = 400;
           draw_olivia(display, 60, hero_top + 15, 3, 3);
           fill_rect(display, 16, hero_top, display.width() - 32, 3, true);
-          centered(display, 22, "PB J SQUAD", 2);
+          centered(display, 22, "PB&J Squad", 2);
           centered(display,
                    52,
                    stats.valid && stats.channel_title[0] != '\0' ? stats.channel_title : "YOUTUBE",
@@ -104,7 +104,7 @@ void draw_olivia(StickyDisplay &display, int x, int y, int x_scale, int y_scale)
       const int right_width = display.width() - right_x - 16;
       draw_olivia(display, 20, 55, 3, 3);
       fill_rect(display, hero_width, 20, 3, display.height() - 40, true);
-      centered_in_rect(display, right_x, right_width, 22, "PB J SQUAD", 2);
+      centered_in_rect(display, right_x, right_width, 22, "PB&J Squad", 2);
       centered_in_rect(display,
                        right_x,
                        right_width,

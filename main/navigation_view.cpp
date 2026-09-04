@@ -51,6 +51,15 @@ int screen_index(StickyScreen screen)
 {
     return static_cast<int>(screen);
 }
+
+const StickyScreen kHomeChoices[] = {
+    StickyScreen::YouTube,
+    StickyScreen::Clock,
+    StickyScreen::Environment,
+    StickyScreen::Power,
+};
+
+constexpr int kHomeChoiceCount = sizeof(kHomeChoices) / sizeof(kHomeChoices[0]);
 }
 
 StickyScreen previous_screen(StickyScreen screen)
@@ -72,9 +81,23 @@ const char *screen_title(StickyScreen screen)
     case StickyScreen::Clock: return "CLOCK";
     case StickyScreen::Environment: return "ENVIRONMENT";
     case StickyScreen::Power: return "POWER";
-    case StickyScreen::Motion: return "MOTION";
     }
     return "STICKY";
+}
+
+StickyScreen home_selection_from_touch(const StickyDisplay &display, int x, int y)
+{
+    const int margin = display.width() >= 700 ? 28 : 18;
+    const int row_step = display.height() >= 700 ? 110 : 54;
+    const int first_row = display.height() >= 700 ? 112 : 130;
+    const int selection_width = display.width() - (margin * 2);
+    if (x < margin || x >= margin + selection_width) return StickyScreen::Home;
+
+    for (int index = 0; index < kHomeChoiceCount; ++index) {
+        const int row_y = first_row + index * row_step;
+        if (y >= row_y - 8 && y < row_y + 35) return kHomeChoices[index];
+    }
+    return StickyScreen::Home;
 }
 
 void render_home_screen(StickyDisplay &display, StickyScreen selected_screen)
@@ -86,27 +109,20 @@ void render_home_screen(StickyDisplay &display, StickyScreen selected_screen)
     text(display, margin, 64, "SELECT A SCREEN", 2);
     fill_rect(display, margin - 3, 96, display.width() - (margin * 2) + 6, 3, true);
 
-    const StickyScreen choices[] = {
-        StickyScreen::YouTube,
-        StickyScreen::Clock,
-        StickyScreen::Environment,
-        StickyScreen::Power,
-        StickyScreen::Motion,
-    };
     const int row_step = display.height() >= 700 ? 110 : 54;
     const int first_row = display.height() >= 700 ? 112 : 130;
     const int selection_width = display.width() - (margin * 2);
-    for (int index = 0; index < 5; ++index) {
+    for (int index = 0; index < kHomeChoiceCount; ++index) {
         const int y = first_row + index * row_step;
-        const bool selected = choices[index] == selected_screen;
+        const bool selected = kHomeChoices[index] == selected_screen;
         if (selected) {
             display.draw_rect(margin, y - 8, selection_width, 43, true);
             text(display, margin + 20, y, ">", 3);
         }
-        text(display, margin + 54, y, screen_title(choices[index]), 3);
+        text(display, margin + 54, y, screen_title(kHomeChoices[index]), 3);
     }
 
-    centered(display, display.height() - 34, "UP/DOWN MOVE  GREY SELECTS", 1);
+    centered(display, display.height() - 34, "UP/DOWN MOVE  TAP SCREEN TO OPEN", 1);
 }
 
 void render_local_screen(StickyDisplay &display,
@@ -161,20 +177,6 @@ void render_local_screen(StickyDisplay &display,
                           data.charging ? "CHARGING" : "ON BATTERY",
                           data.external_power ? "USB" : "");
             centered(display, display.height() >= 700 ? 385 : 285, line, 3);
-        }
-        break;
-    case StickyScreen::Motion:
-        if (!data.motion_valid) {
-            centered(display, 170, "IMU NOT AVAILABLE", 2);
-        } else {
-            std::snprintf(line, sizeof(line), "AX %d  AY %d",
-                          data.motion.accel_x, data.motion.accel_y);
-            centered(display, display.height() >= 700 ? 205 : 145, line, 3);
-            std::snprintf(line, sizeof(line), "AZ %d", data.motion.accel_z);
-            centered(display, display.height() >= 700 ? 275 : 205, line, 3);
-            std::snprintf(line, sizeof(line), "GX %d  GY %d  GZ %d",
-                          data.motion.gyro_x, data.motion.gyro_y, data.motion.gyro_z);
-            centered(display, display.height() >= 700 ? 355 : 275, line, 1);
         }
         break;
     default:

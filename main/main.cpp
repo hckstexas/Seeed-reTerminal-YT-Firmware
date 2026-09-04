@@ -40,7 +40,6 @@
       case StickyScreen::Clock:
       case StickyScreen::Environment:
       case StickyScreen::Power:
-      case StickyScreen::Motion:
           render_local_screen(display, screen, local_data, clock_24_hour);
           break;
       }
@@ -50,13 +49,13 @@
     {
       int index = static_cast<int>(selection);
       if (index < static_cast<int>(StickyScreen::YouTube) ||
-          index > static_cast<int>(StickyScreen::Motion)) {
+          index > static_cast<int>(StickyScreen::Power)) {
           index = static_cast<int>(StickyScreen::YouTube);
       }
       index += direction;
       if (index < static_cast<int>(StickyScreen::YouTube)) {
-          index = static_cast<int>(StickyScreen::Motion);
-      } else if (index > static_cast<int>(StickyScreen::Motion)) {
+          index = static_cast<int>(StickyScreen::Power);
+      } else if (index > static_cast<int>(StickyScreen::Power)) {
           index = static_cast<int>(StickyScreen::YouTube);
       }
       return static_cast<StickyScreen>(index);
@@ -218,8 +217,19 @@
                    clock_24_hour = !clock_24_hour;
                    screen_changed = true;
               } else if (current_screen == StickyScreen::Home) {
-                  current_screen = home_selection;
-                  screen_changed = true;
+                   int touch_x = touch_event.x;
+                   int touch_y = touch_event.y;
+                   if (display.orientation() == DisplayOrientation::Landscape) {
+                       touch_x = display.width() - 1 - touch_event.y;
+                       touch_y = touch_event.x;
+                   }
+                   const StickyScreen touched_screen =
+                       home_selection_from_touch(display, touch_x, touch_y);
+                   if (touched_screen != StickyScreen::Home) {
+                       home_selection = touched_screen;
+                       current_screen = touched_screen;
+                       screen_changed = true;
+                   }
               } else {
                   current_screen = StickyScreen::Home;
                   screen_changed = true;

@@ -11,14 +11,14 @@ enum class StickyScreen : uint8_t {
     Clock,
     Environment,
     Power,
-    Motion,
 };
 
-constexpr int kStickyScreenCount = 6;
+constexpr int kStickyScreenCount = 5;
 
 StickyScreen previous_screen(StickyScreen screen);
 StickyScreen next_screen(StickyScreen screen);
 const char *screen_title(StickyScreen screen);
+StickyScreen home_selection_from_touch(const StickyDisplay &display, int x, int y);
 
 void render_home_screen(StickyDisplay &display, StickyScreen selected_screen);
 void render_local_screen(StickyDisplay &display,
