@@ -4,22 +4,20 @@ menu "YouTube Sticky"
       string "Wi-Fi SSID"
       default ""
       help
-          Wi-Fi network used by the Sticky to reach the YouTube proxy.
+          Wi-Fi network used by the Sticky to reach YouTube directly.
 
     config YOUTUBE_WIFI_PASSWORD
       string "Wi-Fi password"
       default ""
 
-    config YOUTUBE_API_BASE_URL
-      string "HTTPS stats endpoint"
+    config YOUTUBE_API_KEY
+      string "YouTube Data API key"
       default ""
       help
-          Deployed HTTPS endpoint for the existing server-side proxy, without a trailing question mark.
-          Example: https://your-domain.example/api/youtube/stats
+          Optional developer-build default. Do not commit a personal API key; generic builds should use the first-boot setup page.
 
     config YOUTUBE_CHANNEL
       string "YouTube channel ID or @handle"
       default "@PBJSquad"
 
     endmenu
-    

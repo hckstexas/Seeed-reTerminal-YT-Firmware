@@ -1,70 +1,60 @@
 {
-    "schemaVersion": 1,
-    "id": "youtube-sticky-display",
-    "name": "YouTube Sticky Display",
-    "group": "community",
-    "catalogSection": "community",
-    "category": "tools",
-    "mode": "flash",
-    "status": "experimental",
-    "summary": "PB J Squad YouTube subscribers, views, and video count on reTerminal Sticky.",
-    "description": "A native ESP32-S3 firmware that renders PB J Squad YouTube channel totals on the reTerminal Sticky's 800x480 E-Ink display. It uses a deployed HTTPS proxy so the YouTube API key stays server-side.",
-    "author": {
-      "name": "HcksTexas",
-      "url": "https://github.com/hckstexas"
-    },
-    "origin": {
-      "name": "Seeed reTerminal YT Firmware",
-      "url": "https://github.com/hckstexas/Seeed-reTerminal-YT-Firmware"
-    },
-    "source": {
-      "url": "https://github.com/hckstexas/Seeed-reTerminal-YT-Firmware.git",
-      "path": "."
-    },
-    "support": {
-      "url": "https://github.com/hckstexas/Seeed-reTerminal-YT-Firmware/issues"
-    },
-    "documentationUrl": "https://github.com/hckstexas/Seeed-reTerminal-YT-Firmware#readme",
-    "compatibility": {
-      "devices": [
-        "reterminal-sticky"
-      ],
-      "notes": "ESP32-S3 with SSD1677 800x480 E-Ink panel and GT911 touch controller. Experimental until physically tested."
-    },
-    "assets": {
-      "preview": "assets/preview.svg",
-      "previewAlt": "YouTube channel totals rendered on a reTerminal Sticky"
-    },
-    "tags": [
-      "youtube",
-      "statistics",
-      "pb-j",
-      "e-ink"
-    ],
-    "build": {
-      "system": "esp-idf",
-      "version": "v5.4",
-      "target": "esp32s3",
-      "projectPath": "."
-    },
-    "flash": {
-      "versions": [
-        {
-          "version": "0.1.0",
-          "channel": "experimental",
-          "sourceBuild": true
-        }
-      ],
-      "notes": [
-        {
-          "title": "Configure before flashing",
-          "description": "Set Wi-Fi credentials, the deployed HTTPS stats endpoint, and the YouTube channel ID or @handle in ESP-IDF menuconfig before building."
-        },
-        {
-          "title": "Stock firmware recovery",
-          "description": "Flashing replaces the installed firmware. Keep the official stock recovery image available while testing."
-        }
-      ]
-    }
-    }
-    
+  "schemaVersion": 1,
+  "id": "youtube-sticky-display",
+  "name": "YouTube Sticky Display",
+  "group": "community",
+  "catalogSection": "community",
+  "category": "tools",
+  "mode": "flash",
+  "status": "experimental",
+  "summary": "PB&J Squad YouTube subscribers, views, and video count on reTerminal Sticky.",
+  "description": "A native ESP32-S3 firmware that renders PB&J Squad channel totals on the reTerminal Sticky's 800x480 E-Ink display. It calls YouTube directly, so it does not require an always-running companion server.",
+  "author": {
+    "name": "HcksTexas",
+    "url": "https://github.com/hckstexas"
+  },
+  "origin": {
+    "name": "Seeed reTerminal YT Firmware",
+    "url": "https://github.com/hckstexas/Seeed-reTerminal-YT-Firmware"
+  },
+  "source": {
+    "url": "https://github.com/hckstexas/Seeed-reTerminal-YT-Firmware.git",
+    "path": "."
+  },
+  "support": {
+    "url": "https://github.com/hckstexas/Seeed-reTerminal-YT-Firmware/issues"
+  },
+  "documentationUrl": "https://github.com/hckstexas/Seeed-reTerminal-YT-Firmware#readme",
+  "compatibility": {
+    "devices": ["reterminal-sticky"],
+    "notes": "ESP32-S3 with SSD1677 800x480 E-Ink panel and GT911 touch controller. Experimental until physically tested."
+  },
+  "assets": {
+    "preview": "assets/preview.svg",
+    "previewAlt": "YouTube channel totals rendered on a reTerminal Sticky"
+  },
+  "tags": ["youtube", "statistics", "pb-j", "e-ink"],
+  "build": {
+    "system": "esp-idf",
+    "version": "v5.4",
+    "target": "esp32s3",
+    "projectPath": "."
+  },
+  "flash": {
+    "versions": [{
+      "version": "0.2.0",
+      "channel": "experimental",
+      "sourceBuild": true
+    }],
+    "notes": [
+      {
+        "title": "Configure before first refresh",
+        "description": "On first boot, connect to the Sticky-YT setup network and enter Wi-Fi credentials, a YouTube Data API key, and the channel ID or @handle. The key is stored on the device and can be extracted with physical access."
+      },
+      {
+        "title": "Stock firmware recovery",
+        "description": "Flashing replaces the installed firmware. Keep the official stock recovery image available while testing."
+      }
+    ]
+  }
+}
