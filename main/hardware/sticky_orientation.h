@@ -21,6 +21,8 @@ public:
     bool update(DisplayOrientation &orientation);
     bool read_sample(StickyMotionSample &sample);
     bool available() const { return device_ != nullptr; }
+    void set_locked(bool locked) { locked_ = locked; }
+    bool locked() const { return locked_; }
 
 private:
     bool read_register(uint8_t reg, uint8_t *data, size_t length);
@@ -33,4 +35,5 @@ private:
     TickType_t candidate_since_ = 0;
     TickType_t last_motion_sample_ = 0;
     int64_t yaw_microdegrees_ = 0;
+    bool locked_ = false;
 };

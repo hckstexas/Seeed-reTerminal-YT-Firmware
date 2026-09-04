@@ -126,12 +126,38 @@
       TickType_t next_orientation_check = 0;
       TickType_t next_local_poll = 0;
       bool first_refresh = configured;
+      bool orientation_locked = false;
+      bool orientation_combo_latched = false;
 
       while (true) {
           bool refresh_requested = current_screen == StickyScreen::YouTube &&
                                    (first_refresh || xTaskGetTickCount() >= next_refresh);
           bool screen_changed = false;
-          const StickyButtonEvent button_event = buttons.poll();
+          const bool orientation_combo_pressed =
+              buttons.is_pressed(StickyButtonId::Up) &&
+              buttons.is_pressed(StickyButtonId::Down);
+          StickyButtonEvent button_event = buttons.poll();
+          const bool orientation_combo_was_latched = orientation_combo_latched;
+          if (orientation_combo_pressed) {
+              if (!orientation_combo_latched) {
+                  orientation_locked = !orientation_locked;
+                  orientation_sensor.set_locked(orientation_locked);
+                  local_peripherals.beep(orientation_locked ? 90 : 180);
+                  ESP_LOGI(kTag,
+                           "orientation %s",
+                           orientation_locked ? "locked" : "unlocked");
+                  screen_changed = true;
+              }
+              orientation_combo_latched = true;
+              button_event = {};
+          } else {
+              orientation_combo_latched = false;
+              if (orientation_combo_was_latched &&
+                  (button_event.button == StickyButtonId::Up ||
+                   button_event.button == StickyButtonId::Down)) {
+                  button_event = {};
+              }
+          }
           if (button_event.valid()) {
                local_peripherals.beep();
               if (button_event.button == StickyButtonId::Up) {

@@ -74,7 +74,7 @@ bool StickyOrientation::init(i2c_master_bus_handle_t bus)
 
 bool StickyOrientation::update(DisplayOrientation &orientation)
 {
-    if (device_ == nullptr) return false;
+    if (device_ == nullptr || locked_) return false;
 
     StickyMotionSample sample;
     if (!read_motion(sample)) return false;
@@ -109,8 +109,8 @@ bool StickyOrientation::update(DisplayOrientation &orientation)
 
     const DisplayOrientation detected =
         std::abs(sample.accel_x) > std::abs(sample.accel_y)
-            ? DisplayOrientation::Portrait
-            : DisplayOrientation::Landscape;
+            ? DisplayOrientation::Landscape
+            : DisplayOrientation::Portrait;
     if (detected != candidate_) {
         candidate_ = detected;
         candidate_since_ = now;
