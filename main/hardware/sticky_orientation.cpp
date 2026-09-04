@@ -1,5 +1,6 @@
 #include "hardware/sticky_orientation.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <initializer_list>
 
@@ -19,6 +20,8 @@ constexpr uint8_t kGyroscopeControlRegister = 0x11;
 constexpr uint8_t kMotionDataRegister = 0x22;
 constexpr TickType_t kOrientationDebounce = pdMS_TO_TICKS(700);
 constexpr int16_t kGyroscopeMovingThreshold = 1800;
+constexpr int64_t kQuarterTurnMicrodegrees = 65LL * 1000LL * 1000LL;
+constexpr int64_t kGyroSensitivityMicrodegreesPerSecond = 8750;
 
 int16_t little_endian_int16(const uint8_t *bytes)
 {
@@ -64,6 +67,8 @@ bool StickyOrientation::init(i2c_master_bus_handle_t bus)
     }
 
     candidate_since_ = xTaskGetTickCount();
+    last_motion_sample_ = candidate_since_;
+    yaw_microdegrees_ = 0;
     return true;
 }
 
@@ -74,8 +79,31 @@ bool StickyOrientation::update(DisplayOrientation &orientation)
     StickyMotionSample sample;
     if (!read_motion(sample)) return false;
 
+    const TickType_t now = xTaskGetTickCount();
+    const uint32_t elapsed_ms = std::min<uint32_t>(
+        pdTICKS_TO_MS(now - last_motion_sample_), 1000);
+    last_motion_sample_ = now;
+    if (elapsed_ms > 0 && std::abs(sample.gyro_z) > kGyroscopeMovingThreshold) {
+        yaw_microdegrees_ +=
+            static_cast<int64_t>(sample.gyro_z) *
+            kGyroSensitivityMicrodegreesPerSecond *
+            static_cast<int64_t>(elapsed_ms) / 1000;
+        if (std::abs(yaw_microdegrees_) >= kQuarterTurnMicrodegrees) {
+            orientation_ = orientation_ == DisplayOrientation::Landscape
+                               ? DisplayOrientation::Portrait
+                               : DisplayOrientation::Landscape;
+            candidate_ = orientation_;
+            candidate_since_ = now;
+            yaw_microdegrees_ = 0;
+            orientation = orientation_;
+            ESP_LOGI(kTag, "orientation changed to %s",
+                     orientation_ == DisplayOrientation::Portrait ? "portrait" : "landscape");
+            return true;
+        }
+    }
+
     if (std::abs(sample.gyro_z) > kGyroscopeMovingThreshold) {
-        candidate_since_ = xTaskGetTickCount();
+        candidate_since_ = now;
         return false;
     }
 
@@ -85,12 +113,12 @@ bool StickyOrientation::update(DisplayOrientation &orientation)
             : DisplayOrientation::Landscape;
     if (detected != candidate_) {
         candidate_ = detected;
-        candidate_since_ = xTaskGetTickCount();
+        candidate_since_ = now;
         return false;
     }
 
     if (candidate_ != orientation_ &&
-        xTaskGetTickCount() - candidate_since_ >= kOrientationDebounce) {
+        now - candidate_since_ >= kOrientationDebounce) {
         orientation_ = candidate_;
         orientation = orientation_;
         ESP_LOGI(kTag, "orientation changed to %s",

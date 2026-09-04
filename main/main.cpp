@@ -27,6 +27,7 @@
                        StickyScreen home_selection,
                        const YoutubeStats &stats,
                        const StickyLocalData &local_data,
+                       bool clock_24_hour,
                        const char *status_message)
     {
       switch (screen) {
@@ -40,7 +41,7 @@
       case StickyScreen::Environment:
       case StickyScreen::Power:
       case StickyScreen::Motion:
-          render_local_screen(display, screen, local_data);
+          render_local_screen(display, screen, local_data, clock_24_hour);
           break;
       }
     }
@@ -108,6 +109,7 @@
 
       YoutubeStats stats;
       StickyLocalData local_data;
+      bool clock_24_hour = true;
       char error_message[96] = {};
       if (!configured) std::strncpy(error_message, "CONNECT TO STICKY-YT", sizeof(error_message) - 1);
       StickyScreen current_screen = StickyScreen::YouTube;
@@ -117,6 +119,7 @@
                     home_selection,
                     stats,
                     local_data,
+                    clock_24_hour,
                     configured ? "CONNECTING" : error_message);
       display.refresh_full();
       TickType_t next_refresh = 0;
@@ -154,6 +157,9 @@
                       screen_changed = true;
                   } else if (current_screen == StickyScreen::YouTube && configured) {
                       refresh_requested = true;
+                   } else if (current_screen == StickyScreen::Clock) {
+                       clock_24_hour = !clock_24_hour;
+                       screen_changed = true;
                   } else {
                       current_screen = StickyScreen::Home;
                       screen_changed = true;
@@ -182,6 +188,9 @@
           } else if (touch_event.type == TouchEventType::Tap) {
               if (current_screen == StickyScreen::YouTube && configured) {
                   refresh_requested = true;
+               } else if (current_screen == StickyScreen::Clock) {
+                   clock_24_hour = !clock_24_hour;
+                   screen_changed = true;
               } else if (current_screen == StickyScreen::Home) {
                   current_screen = home_selection;
                   screen_changed = true;
@@ -207,6 +216,7 @@
                             home_selection,
                             stats,
                             local_data,
+                            clock_24_hour,
                             configured ? "READY" : error_message);
               display.refresh_full();
           }
@@ -224,6 +234,7 @@
                                 home_selection,
                                 stats,
                                 local_data,
+                                clock_24_hour,
                                 configured ? "READY" : error_message);
                   display.refresh_full();
               }

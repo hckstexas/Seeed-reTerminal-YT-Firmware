@@ -4,6 +4,7 @@
     #include <string>
 
     #include "ui/font_5x7.h"
+#include "ui/olivia_bitmap.h"
 
     namespace {
     void fill_rect(StickyDisplay &display, int x, int y, int width, int height, bool black)
@@ -31,6 +32,33 @@
       text(display, std::max(8, (display.width() - text_width(value, scale)) / 2), y, value, scale);
     }
 
+void centered_in_rect(StickyDisplay &display,
+                      int x,
+                      int width,
+                      int y,
+                      const std::string &value,
+                      int scale)
+{
+  text(display, x + std::max(0, (width - text_width(value, scale)) / 2), y, value, scale);
+}
+
+void draw_olivia(StickyDisplay &display, int x, int y, int x_scale, int y_scale)
+{
+  for (int source_y = 0; source_y < OliviaBitmap::kHeight; ++source_y) {
+    for (int source_x = 0; source_x < OliviaBitmap::kWidth; ++source_x) {
+      const uint8_t source_byte =
+          OliviaBitmap::kPixels[source_y * OliviaBitmap::kStride + source_x / 8];
+      if ((source_byte & (0x80U >> (source_x % 8))) == 0) continue;
+      fill_rect(display,
+                x + source_x * x_scale,
+                y + source_y * y_scale,
+                x_scale,
+                y_scale,
+                true);
+    }
+  }
+}
+
     std::string comma_number(uint64_t value)
     {
       std::string digits = std::to_string(value);
@@ -45,50 +73,67 @@
       display.draw_rect(7, 7, display.width() - 14, display.height() - 14, true);
 
       if (display.orientation() == DisplayOrientation::Portrait) {
-          centered(display, 24, "PB J SQUAD", 3);
-          centered(display, 61, stats.valid && stats.channel_title[0] != '\0' ? stats.channel_title : "YOUTUBE CHANNEL", 2);
-          fill_rect(display, 25, 88, display.width() - 50, 3, true);
+      const int hero_width = 165;
+      const int right_x = hero_width + 16;
+      const int right_width = display.width() - right_x - 16;
+      draw_olivia(display, 10, 18, 2, 2);
+      centered_in_rect(display, right_x, right_width, 30, "PB J SQUAD", 2);
+      centered_in_rect(display,
+                       right_x,
+                       right_width,
+                       61,
+                       stats.valid && stats.channel_title[0] != '\0' ? stats.channel_title : "YOUTUBE",
+                       1);
+      fill_rect(display, 16, 248, display.width() - 32, 3, true);
 
           if (!stats.valid) {
-              centered(display, 180, "WAITING FOR DATA", 2);
-              centered(display, 235, status_message == nullptr ? "CHECK CONFIGURATION" : status_message, 1);
-              centered(display, 300, "PRESS BUTTON TO RETRY", 1);
+          centered(display, 320, "WAITING FOR DATA", 2);
+          centered(display, 380, status_message == nullptr ? "CHECK CONFIGURATION" : status_message, 1);
+          centered(display, 430, "PRESS BUTTON TO RETRY", 1);
               return;
           }
 
-          centered(display, 125, "SUBSCRIBERS", 2);
-          centered(display, 157, comma_number(stats.subscribers), 4);
-          fill_rect(display, 45, 220, display.width() - 90, 2, true);
-          centered(display, 250, "VIEWS", 2);
-          centered(display, 282, comma_number(stats.views), 3);
-          centered(display, 390, "VIDEOS", 2);
-          centered(display, 422, comma_number(stats.videos), 3);
-          fill_rect(display, 45, 475, display.width() - 90, 2, true);
-          centered(display, 515, "AUTO REFRESH 5 MIN", 2);
-          centered(display, 555, "TAP OR PRESS TO REFRESH", 1);
+      centered(display, 285, "SUBSCRIBERS", 2);
+      centered(display, 315, comma_number(stats.subscribers), 5);
+      fill_rect(display, 45, 405, display.width() - 90, 2, true);
+      centered(display, 430, "VIEWS", 2);
+      centered(display, 460, comma_number(stats.views), 4);
+      fill_rect(display, 45, 555, display.width() - 90, 2, true);
+      centered(display, 580, "VIDEOS", 2);
+      centered(display, 610, comma_number(stats.videos), 4);
+      centered(display, 730, "TAP OR PRESS TO REFRESH", 1);
           return;
       }
 
-      text(display, 25, 23, "PB J SQUAD", 3);
-      text(display, 28, 61, stats.valid && stats.channel_title[0] != '\0' ? stats.channel_title : "YOUTUBE CHANNEL", 2);
-      fill_rect(display, 25, 86, 750, 3, true);
+  const int hero_width = 275;
+  const int right_x = hero_width + 18;
+  const int right_width = display.width() - right_x - 18;
+  draw_olivia(display, 32, 20, 3, 4);
+  fill_rect(display, hero_width, 20, 3, display.height() - 40, true);
+  centered_in_rect(display, right_x, right_width, 22, "PB J SQUAD", 2);
+  centered_in_rect(display,
+                   right_x,
+                   right_width,
+                   51,
+                   stats.valid && stats.channel_title[0] != '\0' ? stats.channel_title : "YOUTUBE CHANNEL",
+                   1);
+  fill_rect(display, right_x, 70, right_width, 3, true);
 
       if (!stats.valid) {
-          centered(display, 150, "WAITING FOR DATA", 3);
-          centered(display, 215, status_message == nullptr ? "CHECK CONFIGURATION" : status_message, 2);
-          centered(display, 280, "PRESS BUTTON TO RETRY", 2);
+      centered_in_rect(display, right_x, right_width, 175, "WAITING FOR DATA", 2);
+      centered_in_rect(display, right_x, right_width, 225, status_message == nullptr ? "CHECK CONFIGURATION" : status_message, 1);
+      centered_in_rect(display, right_x, right_width, 275, "PRESS BUTTON TO RETRY", 1);
           return;
       }
 
-      centered(display, 112, "SUBSCRIBERS", 2);
-      centered(display, 146, comma_number(stats.subscribers), 5);
-      fill_rect(display, 42, 235, 716, 2, true);
-      text(display, 67, 270, "VIEWS", 2);
-      text(display, 67, 310, comma_number(stats.views), 3);
-      text(display, 450, 270, "VIDEOS", 2);
-      text(display, 450, 310, comma_number(stats.videos), 3);
-      fill_rect(display, 42, 367, 716, 2, true);
-      centered(display, 405, "AUTO REFRESH 5 MIN", 2);
-      centered(display, 440, "TAP OR PRESS BUTTON TO REFRESH", 1);
+  centered_in_rect(display, right_x, right_width, 88, "SUBSCRIBERS", 2);
+  centered_in_rect(display, right_x, right_width, 116, comma_number(stats.subscribers), 5);
+  fill_rect(display, right_x, 190, right_width, 2, true);
+  centered_in_rect(display, right_x, right_width, 207, "VIEWS", 2);
+  centered_in_rect(display, right_x, right_width, 237, comma_number(stats.views), 4);
+  fill_rect(display, right_x, 315, right_width, 2, true);
+  centered_in_rect(display, right_x, right_width, 332, "VIDEOS", 2);
+  centered_in_rect(display, right_x, right_width, 362, comma_number(stats.videos), 4);
+  centered_in_rect(display, right_x, right_width, 435, "AUTO REFRESH 5 MIN", 1);
     }
     

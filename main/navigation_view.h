@@ -23,4 +23,5 @@ const char *screen_title(StickyScreen screen);
 void render_home_screen(StickyDisplay &display, StickyScreen selected_screen);
 void render_local_screen(StickyDisplay &display,
                          StickyScreen screen,
-                         const StickyLocalData &data);
+                         const StickyLocalData &data,
+                         bool clock_24_hour);

@@ -111,7 +111,8 @@ void render_home_screen(StickyDisplay &display, StickyScreen selected_screen)
 
 void render_local_screen(StickyDisplay &display,
                          StickyScreen screen,
-                         const StickyLocalData &data)
+                         const StickyLocalData &data,
+                         bool clock_24_hour)
 {
     display.clear(true);
     display.draw_rect(7, 7, display.width() - 14, display.height() - 14, true);
@@ -125,8 +126,14 @@ void render_local_screen(StickyDisplay &display,
             centered(display, 170, "RTC NOT AVAILABLE", 2);
             centered(display, 220, "CHECK SENSOR BUS", 1);
         } else {
-            std::snprintf(line, sizeof(line), "%02d:%02d", data.hour, data.minute);
-            centered(display, display.height() >= 700 ? 230 : 165, line, 6);
+            if (clock_24_hour) {
+                std::snprintf(line, sizeof(line), "%02d:%02d", data.hour, data.minute);
+            } else {
+                const int hour = data.hour % 12 == 0 ? 12 : data.hour % 12;
+                std::snprintf(line, sizeof(line), "%02d:%02d %s",
+                              hour, data.minute, data.hour >= 12 ? "PM" : "AM");
+            }
+            centered(display, display.height() >= 700 ? 230 : 165, line, 5);
             std::snprintf(line, sizeof(line), "%04d-%02d-%02d",
                           data.year, data.month, data.day);
             centered(display, display.height() >= 700 ? 330 : 275, line, 2);
@@ -137,9 +144,9 @@ void render_local_screen(StickyDisplay &display,
             centered(display, 170, "SHT40 NOT AVAILABLE", 2);
         } else {
             std::snprintf(line, sizeof(line), "TEMP %.1f C", data.temperature_c);
-            centered(display, display.height() >= 700 ? 235 : 165, line, 3);
+            centered(display, display.height() >= 700 ? 235 : 165, line, 4);
             std::snprintf(line, sizeof(line), "HUMIDITY %.1f %%", data.humidity_percent);
-            centered(display, display.height() >= 700 ? 335 : 265, line, 2);
+            centered(display, display.height() >= 700 ? 335 : 265, line, 4);
         }
         break;
     case StickyScreen::Power:
@@ -147,13 +154,13 @@ void render_local_screen(StickyDisplay &display,
             centered(display, 170, "FUEL GAUGE UNAVAILABLE", 2);
         } else {
             std::snprintf(line, sizeof(line), "VOLTAGE %u MV", data.voltage_mv);
-            centered(display, display.height() >= 700 ? 210 : 145, line, 2);
+            centered(display, display.height() >= 700 ? 210 : 145, line, 3);
             std::snprintf(line, sizeof(line), "CHARGE %u %%", data.state_of_charge);
-            centered(display, display.height() >= 700 ? 290 : 215, line, 3);
+            centered(display, display.height() >= 700 ? 290 : 215, line, 4);
             std::snprintf(line, sizeof(line), "%s %s",
                           data.charging ? "CHARGING" : "ON BATTERY",
                           data.external_power ? "USB" : "");
-            centered(display, display.height() >= 700 ? 385 : 285, line, 2);
+            centered(display, display.height() >= 700 ? 385 : 285, line, 3);
         }
         break;
     case StickyScreen::Motion:
@@ -162,9 +169,9 @@ void render_local_screen(StickyDisplay &display,
         } else {
             std::snprintf(line, sizeof(line), "AX %d  AY %d",
                           data.motion.accel_x, data.motion.accel_y);
-            centered(display, display.height() >= 700 ? 205 : 145, line, 2);
+            centered(display, display.height() >= 700 ? 205 : 145, line, 3);
             std::snprintf(line, sizeof(line), "AZ %d", data.motion.accel_z);
-            centered(display, display.height() >= 700 ? 275 : 205, line, 2);
+            centered(display, display.height() >= 700 ? 275 : 205, line, 3);
             std::snprintf(line, sizeof(line), "GX %d  GY %d  GZ %d",
                           data.motion.gyro_x, data.motion.gyro_y, data.motion.gyro_z);
             centered(display, display.height() >= 700 ? 355 : 275, line, 1);
@@ -175,6 +182,11 @@ void render_local_screen(StickyDisplay &display,
         break;
     }
 
-    centered(display, display.height() - 60, "UP/DOWN CHANGE SCREEN", 1);
-    centered(display, display.height() - 35, "LONG PRESS GREY FOR HOME", 1);
+    if (screen == StickyScreen::Clock) {
+        centered(display, display.height() - 60, "UP/DOWN CHANGE SCREEN", 1);
+        centered(display, display.height() - 35, "GREY/TAP TO TOGGLE 12/24H", 1);
+    } else {
+        centered(display, display.height() - 60, "UP/DOWN CHANGE SCREEN", 1);
+        centered(display, display.height() - 35, "LONG PRESS GREY FOR HOME", 1);
+    }
 }
