@@ -17,6 +17,7 @@ constexpr uint8_t kSht40Address = 0x44;
 constexpr uint8_t kFuelGaugeAddress = BQ27220_I2C_ADDR;
 constexpr uint8_t kRtcTimeRegister = 0x02;
 constexpr uint8_t kSht40HighPrecisionCommand = 0xFD;
+constexpr int kSht40ConversionDelayMs = 20;
 constexpr uint8_t kFuelVoltageCommand = 0x08;
 constexpr uint8_t kFuelAverageCurrentCommand = 0x0B;
 constexpr uint8_t kFuelStateOfChargeCommand = 0x2C;
@@ -147,14 +148,16 @@ bool StickyLocalPeripherals::read_environment(StickyLocalData &data)
 
     const uint8_t command = kSht40HighPrecisionCommand;
     uint8_t raw[6] = {};
-    if (i2c_master_transmit(sht40_, &command, 1, 100) != ESP_OK) {
-        data.environment_valid = false;
-        return false;
+    bool measurement_valid = false;
+    for (int attempt = 0; attempt < 2 && !measurement_valid; ++attempt) {
+        if (i2c_master_transmit(sht40_, &command, 1, 100) != ESP_OK) continue;
+        vTaskDelay(pdMS_TO_TICKS(kSht40ConversionDelayMs));
+        measurement_valid =
+            i2c_master_receive(sht40_, raw, sizeof(raw), 100) == ESP_OK &&
+            crc8(raw, 2) == raw[2] &&
+            crc8(raw + 3, 2) == raw[5];
     }
-    vTaskDelay(pdMS_TO_TICKS(10));
-    if (i2c_master_receive(sht40_, raw, sizeof(raw), 100) != ESP_OK ||
-        crc8(raw, 2) != raw[2] ||
-        crc8(raw + 3, 2) != raw[5]) {
+    if (!measurement_valid) {
         data.environment_valid = false;
         return false;
     }

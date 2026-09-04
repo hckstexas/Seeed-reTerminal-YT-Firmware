@@ -2,6 +2,7 @@
 
     #include "esp_err.h"
     #include "esp_log.h"
+#include "driver/gpio.h"
     #include "freertos/FreeRTOS.h"
     #include "freertos/task.h"
     #include "nvs_flash.h"
@@ -69,6 +70,11 @@
           nvs_err = nvs_flash_init();
       }
       if (nvs_err != ESP_OK) ESP_LOGW(kTag, "NVS init failed: %s", esp_err_to_name(nvs_err));
+
+      const esp_err_t gpio_isr_err = gpio_install_isr_service(0);
+      if (gpio_isr_err != ESP_OK && gpio_isr_err != ESP_ERR_INVALID_STATE) {
+          ESP_LOGW(kTag, "GPIO ISR service unavailable: %s", esp_err_to_name(gpio_isr_err));
+      }
 
       StickyDisplay display;
       if (!display.init()) { ESP_LOGE(kTag, "Display initialization failed"); return; }
