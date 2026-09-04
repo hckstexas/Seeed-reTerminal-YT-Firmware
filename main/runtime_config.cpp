@@ -1,6 +1,8 @@
 #include "runtime_config.h"
 
 #include <cstring>
+#include <memory>
+#include <new>
 
 #include "esp_event.h"
 #include "esp_http_server.h"
@@ -18,6 +20,7 @@ constexpr const char *kTag = "runtime_config";
 constexpr const char *kApSsid = "Sticky-YT";
 constexpr const char *kApPassword = "stickysetup";
 httpd_handle_t s_server = nullptr;
+constexpr size_t kRequestBodyCapacity = 2048;
 
 void copy_value(char *destination, size_t size, const char *source) {
     if (size == 0) return;
@@ -32,24 +35,8 @@ int hex_value(char c) {
     return -1;
 }
 
-void url_decode(char *value) {
-    char *read = value;
-    char *write = value;
-    while (*read != '\0') {
-        if (*read == '+') {
-            *write++ = ' ';
-            ++read;
-        } else if (*read == '%' && hex_value(read[1]) >= 0 && hex_value(read[2]) >= 0) {
-            *write++ = static_cast<char>((hex_value(read[1]) << 4) | hex_value(read[2]));
-            read += 3;
-        } else {
-            *write++ = *read++;
-        }
-    }
-    *write = '\0';
-}
-
 void form_value(const char *body, const char *key, char *destination, size_t size) {
+    if (size == 0) return;
     destination[0] = '\0';
     const size_t key_length = std::strlen(key);
     const char *cursor = body;
@@ -63,12 +50,24 @@ void form_value(const char *body, const char *key, char *destination, size_t siz
             const size_t value_length = ampersand == nullptr
                 ? std::strlen(value_start)
                 : static_cast<size_t>(ampersand - value_start);
-            char value[1024] = {};
-            const size_t copy_length = value_length < sizeof(value) - 1 ? value_length : sizeof(value) - 1;
-            std::memcpy(value, value_start, copy_length);
-            value[copy_length] = '\0';
-            url_decode(value);
-            copy_value(destination, size, value);
+            size_t written = 0;
+            for (size_t index = 0; index < value_length; ++index) {
+                char decoded = value_start[index];
+                if (decoded == '+') {
+                    decoded = ' ';
+                } else if (decoded == '%' && index + 2 < value_length &&
+                           hex_value(value_start[index + 1]) >= 0 &&
+                           hex_value(value_start[index + 2]) >= 0) {
+                    decoded = static_cast<char>(
+                        (hex_value(value_start[index + 1]) << 4) |
+                        hex_value(value_start[index + 2]));
+                    index += 2;
+                }
+                if (written + 1 < size) {
+                    destination[written++] = decoded;
+                }
+            }
+            destination[written] = '\0';
             return;
         }
         cursor = ampersand == nullptr ? nullptr : ampersand + 1;
@@ -127,16 +126,16 @@ esp_err_t index_handler(httpd_req_t *request) {
 }
 
 esp_err_t save_handler(httpd_req_t *request) {
-    char body[2048] = {};
-    if (!read_request_body(request, body, sizeof(body))) {
+    std::unique_ptr<char[]> body(new (std::nothrow) char[kRequestBodyCapacity] {});
+    if (!body || !read_request_body(request, body.get(), kRequestBodyCapacity)) {
         return send_page(request, "400 Bad Request", "<h1>Invalid setup request</h1><p>The form data was missing or too large.</p>");
     }
 
     YoutubeConfig config;
-    form_value(body, "ssid", config.wifi_ssid, sizeof(config.wifi_ssid));
-    form_value(body, "password", config.wifi_password, sizeof(config.wifi_password));
-    form_value(body, "api_key", config.api_key, sizeof(config.api_key));
-    form_value(body, "channel", config.channel, sizeof(config.channel));
+    form_value(body.get(), "ssid", config.wifi_ssid, sizeof(config.wifi_ssid));
+    form_value(body.get(), "password", config.wifi_password, sizeof(config.wifi_password));
+    form_value(body.get(), "api_key", config.api_key, sizeof(config.api_key));
+    form_value(body.get(), "channel", config.channel, sizeof(config.channel));
     if (!config.ready()) {
         return send_page(request, "400 Bad Request", "<h1>Missing setup value</h1><p>Wi-Fi, API key, and channel are required.</p>");
     }
@@ -188,6 +187,7 @@ bool save_youtube_config(const YoutubeConfig &config) {
 bool start_youtube_provisioning() {
     if (!start_ap()) return false;
     httpd_config_t server_config = HTTPD_DEFAULT_CONFIG();
+    server_config.stack_size = 8192;
     if (httpd_start(&s_server, &server_config) != ESP_OK) return false;
     httpd_uri_t index_uri = {};
     index_uri.uri = "/";
