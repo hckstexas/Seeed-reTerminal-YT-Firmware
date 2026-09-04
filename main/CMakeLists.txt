@@ -11,6 +11,6 @@ idf_component_register(
            "hardware/sticky_sensors.cpp"
            "hardware/sticky_touch.cpp"
       INCLUDE_DIRS "."
-      PRIV_REQUIRES esp_http_client esp_http_server esp_wifi esp_event esp_netif nvs_flash mbedtls json driver button gt911 seeed_epaper
+      PRIV_REQUIRES esp_http_client esp_http_server esp_wifi esp_event esp_netif nvs_flash mbedtls json esp_driver_i2c esp_driver_gpio esp_driver_ledc button gt911 seeed_epaper
     )
     
