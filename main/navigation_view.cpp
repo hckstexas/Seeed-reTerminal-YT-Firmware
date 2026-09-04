@@ -1,6 +1,7 @@
 #include "navigation_view.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <string>
 
 #include "ui/font_5x7.h"
@@ -46,21 +47,32 @@ void centered(StickyDisplay &display, int y, const std::string &value, int scale
     text(display, std::max(8, (display.width() - text_width(value, scale)) / 2), y, value, scale);
 }
 
-int screen_index(StickyScreen screen)
+void frame(StickyDisplay &display, const char *title)
 {
-    return static_cast<int>(screen);
+    display.clear(true);
+    display.draw_rect(7, 7, display.width() - 14, display.height() - 14, true);
+    centered(display, 25, title, display.width() < 600 ? 3 : 4);
+    fill_rect(display, 25, 78, display.width() - 50, 3, true);
+}
+
+std::string signed_number(int16_t value)
+{
+    char buffer[12] = {};
+    std::snprintf(buffer, sizeof(buffer), "%+d", static_cast<int>(value));
+    return buffer;
 }
 }
 
 StickyScreen previous_screen(StickyScreen screen)
 {
-    const int index = screen_index(screen);
+    const int index = static_cast<int>(screen);
     return static_cast<StickyScreen>((index + kStickyScreenCount - 1) % kStickyScreenCount);
 }
 
 StickyScreen next_screen(StickyScreen screen)
 {
-    return static_cast<StickyScreen>((screen_index(screen) + 1) % kStickyScreenCount);
+    const int index = static_cast<int>(screen);
+    return static_cast<StickyScreen>((index + 1) % kStickyScreenCount);
 }
 
 const char *screen_title(StickyScreen screen)
@@ -80,7 +92,7 @@ void render_home_screen(StickyDisplay &display, StickyScreen selected_screen)
 {
     display.clear(true);
     display.draw_rect(7, 7, display.width() - 14, display.height() - 14, true);
-    text(display, 28, 25, "STICKY HOME", 3);
+    text(display, 28, 25, "STICKY HOME", display.width() < 600 ? 2 : 3);
     text(display, 28, 64, "SELECT A SCREEN", 2);
     fill_rect(display, 25, 96, display.width() - 50, 3, true);
 
@@ -91,28 +103,121 @@ void render_home_screen(StickyDisplay &display, StickyScreen selected_screen)
         StickyScreen::Power,
         StickyScreen::Motion,
     };
+    const int choice_width = display.width() - 50;
     for (int index = 0; index < 5; ++index) {
         const int y = 130 + index * 54;
         const bool selected = choices[index] == selected_screen;
         if (selected) {
-            display.draw_rect(28, y - 8, 744, 43, true);
-            text(display, 50, y, ">", 3);
+            display.draw_rect(25, y - 8, choice_width, 43, true);
+            text(display, 42, y, ">", 3);
         }
-        text(display, 82, y, screen_title(choices[index]), 3);
+        text(display, 74, y, screen_title(choices[index]), display.width() < 600 ? 2 : 3);
     }
 
-    centered(display, 425, "UP/DOWN MOVE  GREY SELECTS", 1);
+    centered(display, display.height() - 55, "UP/DOWN MOVE  GREY SELECTS", 1);
 }
 
-void render_placeholder_screen(StickyDisplay &display, StickyScreen screen)
+void render_clock_screen(StickyDisplay &display, const StickyClockReading &reading)
 {
-    display.clear(true);
-    display.draw_rect(7, 7, display.width() - 14, display.height() - 14, true);
-    centered(display, 35, screen_title(screen), 4);
-    fill_rect(display, 50, 95, display.width() - 100, 3, true);
-    centered(display, 155, "COMING NEXT", 4);
-    centered(display, 235, "THIS SCREEN IS RESERVED", 2);
-    centered(display, 275, "FOR THE ORIGINAL STICKY FEATURES", 2);
-    centered(display, 365, "UP/DOWN CHANGE SCREEN", 2);
-    centered(display, 405, "LONG PRESS GREY FOR HOME", 2);
+    frame(display, "CLOCK");
+    if (!reading.valid) {
+        centered(display, 170, "RTC UNAVAILABLE", 3);
+        centered(display, 235, "CHECK RTC BATTERY", 2);
+        centered(display, display.height() - 55, "UP/DOWN CHANGE SCREEN", 1);
+        return;
+    }
+
+    char time_value[16] = {};
+    char date_value[24] = {};
+    std::snprintf(time_value,
+                  sizeof(time_value),
+                  "%02u:%02u:%02u",
+                  reading.hour,
+                  reading.minute,
+                  reading.second);
+    std::snprintf(date_value,
+                  sizeof(date_value),
+                  "%04u-%02u-%02u",
+                  reading.year,
+                  reading.month,
+                  reading.day);
+
+    const int time_scale = display.width() < 600 ? 5 : 8;
+    centered(display, display.height() < 600 ? 145 : 155, time_value, time_scale);
+    centered(display, display.height() < 600 ? 225 : 270, date_value, 3);
+    centered(display, display.height() - 55, "PCF8563 RTC", 2);
+}
+
+void render_environment_screen(StickyDisplay &display, const StickyEnvironmentReading &reading)
+{
+    frame(display, "ENVIRONMENT");
+    if (!reading.valid) {
+        centered(display, 170, "SHT40 UNAVAILABLE", 2);
+    } else {
+        char temperature[32] = {};
+        char humidity[32] = {};
+        std::snprintf(temperature, sizeof(temperature), "TEMP %5.1f C", reading.temperature_c);
+        std::snprintf(humidity, sizeof(humidity), "HUMIDITY %5.1f %%", reading.humidity_percent);
+        centered(display, display.width() < 600 ? 165 : 155, temperature, display.width() < 600 ? 2 : 3);
+        centered(display, display.width() < 600 ? 245 : 255, humidity, display.width() < 600 ? 2 : 3);
+    }
+    centered(display, display.height() - 55, "SHT40  UP/DOWN CHANGE", 1);
+}
+
+void render_power_screen(StickyDisplay &display, const StickyPowerReading &reading)
+{
+    frame(display, "POWER");
+    const int value_scale = display.width() < 600 ? 4 : 6;
+    if (reading.fuel_gauge_available) {
+        char battery[16] = {};
+        char voltage[24] = {};
+        std::snprintf(battery, sizeof(battery), "%u%%", reading.battery_percent);
+        std::snprintf(voltage, sizeof(voltage), "%u MV", reading.voltage_mv);
+        centered(display, display.width() < 600 ? 135 : 125, "BATTERY", 2);
+        centered(display, display.width() < 600 ? 175 : 165, battery, value_scale);
+        centered(display, display.width() < 600 ? 255 : 255, voltage, 3);
+        char current[24] = {};
+        std::snprintf(current, sizeof(current), "CURRENT %d MA", static_cast<int>(reading.current_ma));
+        centered(display, display.width() < 600 ? 315 : 325, current, 2);
+    } else {
+        centered(display, 175, "BATTERY GAUGE OFFLINE", 2);
+    }
+
+    const char *power_state = reading.external_power
+                                  ? (reading.charging ? "USB CHARGING" : "USB POWER")
+                                  : "BATTERY POWER";
+    centered(display, display.height() - 100, power_state, 2);
+    centered(display, display.height() - 55, "BQ27220  UP/DOWN CHANGE", 1);
+}
+
+void render_motion_screen(StickyDisplay &display, const StickyMotionReading &reading)
+{
+    frame(display, "MOTION");
+    if (!reading.valid) {
+        centered(display, 175, "LSM6DS3 UNAVAILABLE", 2);
+    } else {
+        char line[40] = {};
+        const int scale = display.width() < 600 ? 2 : 3;
+        std::snprintf(line,
+                      sizeof(line),
+                      "GYRO %s %s %s",
+                      signed_number(reading.gyro_x).c_str(),
+                      signed_number(reading.gyro_y).c_str(),
+                      signed_number(reading.gyro_z).c_str());
+        centered(display, display.width() < 600 ? 135 : 130, line, scale);
+        std::snprintf(line,
+                      sizeof(line),
+                      "ACCEL %s %s %s",
+                      signed_number(reading.accel_x).c_str(),
+                      signed_number(reading.accel_y).c_str(),
+                      signed_number(reading.accel_z).c_str());
+        centered(display, display.width() < 600 ? 205 : 200, line, scale);
+    }
+
+    centered(display,
+             display.width() < 600 ? 330 : 330,
+             display.orientation() == DisplayOrientation::Portrait ? "ORIENTATION PORTRAIT"
+                                                                   : "ORIENTATION LANDSCAPE",
+             2);
+    centered(display, display.height() - 55, "RAW GYRO/ACCEL  UP/DOWN", 1);
 }

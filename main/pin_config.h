@@ -9,7 +9,7 @@
 #define PIN_CHARGE_STATE    40  // Charge status input
 #define PIN_EXTERNAL_POWER  9   // USB/external power detect, high when present
 
-// I2C1 - Sensor bus (BQ27220 + RTC + SHT40 + IMU)
+// I2C1 - Sensor bus (PCF8563 RTC + BQ27220 + SHT40 + LSM6DS3TR-C)
 #define PIN_SENSOR_SCL      0
 #define PIN_SENSOR_SDA      1
 
