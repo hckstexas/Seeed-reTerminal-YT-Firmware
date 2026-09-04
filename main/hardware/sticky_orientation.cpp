@@ -18,10 +18,39 @@ constexpr uint8_t kControl3Register = 0x12;
 constexpr uint8_t kAccelerometerControlRegister = 0x10;
 constexpr uint8_t kGyroscopeControlRegister = 0x11;
 constexpr uint8_t kMotionDataRegister = 0x22;
-constexpr TickType_t kOrientationDebounce = pdMS_TO_TICKS(700);
 constexpr int16_t kGyroscopeMovingThreshold = 1800;
 constexpr int64_t kQuarterTurnMicrodegrees = 65LL * 1000LL * 1000LL;
 constexpr int64_t kGyroSensitivityMicrodegreesPerSecond = 8750;
+
+DisplayOrientation next_quarter_turn(DisplayOrientation orientation)
+{
+    switch (orientation) {
+    case DisplayOrientation::Landscape:
+        return DisplayOrientation::Portrait;
+    case DisplayOrientation::Portrait:
+        return DisplayOrientation::LandscapeInverted;
+    case DisplayOrientation::LandscapeInverted:
+        return DisplayOrientation::PortraitInverted;
+    case DisplayOrientation::PortraitInverted:
+        return DisplayOrientation::Landscape;
+    }
+    return DisplayOrientation::Landscape;
+}
+
+const char *orientation_name(DisplayOrientation orientation)
+{
+    switch (orientation) {
+    case DisplayOrientation::Landscape:
+        return "landscape";
+    case DisplayOrientation::Portrait:
+        return "portrait";
+    case DisplayOrientation::LandscapeInverted:
+        return "landscape inverted";
+    case DisplayOrientation::PortraitInverted:
+        return "portrait inverted";
+    }
+    return "unknown";
+}
 
 int16_t little_endian_int16(const uint8_t *bytes)
 {
@@ -66,8 +95,7 @@ bool StickyOrientation::init(i2c_master_bus_handle_t bus)
         return false;
     }
 
-    candidate_since_ = xTaskGetTickCount();
-    last_motion_sample_ = candidate_since_;
+    last_motion_sample_ = xTaskGetTickCount();
     yaw_microdegrees_ = 0;
     return true;
 }
@@ -88,42 +116,21 @@ bool StickyOrientation::update(DisplayOrientation &orientation)
             static_cast<int64_t>(sample.gyro_z) *
             kGyroSensitivityMicrodegreesPerSecond *
             static_cast<int64_t>(elapsed_ms) / 1000;
-        if (std::abs(yaw_microdegrees_) >= kQuarterTurnMicrodegrees) {
-            orientation_ = orientation_ == DisplayOrientation::Landscape
-                               ? DisplayOrientation::Portrait
-                               : DisplayOrientation::Landscape;
-            candidate_ = orientation_;
-            candidate_since_ = now;
-            yaw_microdegrees_ = 0;
+        const int quarter_turns = static_cast<int>(
+            std::abs(yaw_microdegrees_) / kQuarterTurnMicrodegrees);
+        if (quarter_turns > 0) {
+            for (int turn = 0; turn < quarter_turns; ++turn) {
+                orientation_ = next_quarter_turn(orientation_);
+            }
+            yaw_microdegrees_ %= kQuarterTurnMicrodegrees;
             orientation = orientation_;
-            ESP_LOGI(kTag, "orientation changed to %s",
-                     orientation_ == DisplayOrientation::Portrait ? "portrait" : "landscape");
+            ESP_LOGI(kTag, "orientation changed to %s", orientation_name(orientation_));
             return true;
         }
     }
 
     if (std::abs(sample.gyro_z) > kGyroscopeMovingThreshold) {
-        candidate_since_ = now;
         return false;
-    }
-
-    const DisplayOrientation detected =
-        std::abs(sample.accel_x) > std::abs(sample.accel_y)
-            ? DisplayOrientation::Landscape
-            : DisplayOrientation::Portrait;
-    if (detected != candidate_) {
-        candidate_ = detected;
-        candidate_since_ = now;
-        return false;
-    }
-
-    if (candidate_ != orientation_ &&
-        now - candidate_since_ >= kOrientationDebounce) {
-        orientation_ = candidate_;
-        orientation = orientation_;
-        ESP_LOGI(kTag, "orientation changed to %s",
-                 orientation_ == DisplayOrientation::Portrait ? "portrait" : "landscape");
-        return true;
     }
 
     return false;

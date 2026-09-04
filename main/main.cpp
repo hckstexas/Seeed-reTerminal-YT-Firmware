@@ -219,9 +219,21 @@
               } else if (current_screen == StickyScreen::Home) {
                    int touch_x = touch_event.x;
                    int touch_y = touch_event.y;
-                   if (display.orientation() == DisplayOrientation::Landscape) {
+                    switch (display.orientation()) {
+                    case DisplayOrientation::Landscape:
                        touch_x = display.width() - 1 - touch_event.y;
                        touch_y = touch_event.x;
+                        break;
+                    case DisplayOrientation::LandscapeInverted:
+                        touch_x = touch_event.y;
+                        touch_y = display.height() - 1 - touch_event.x;
+                        break;
+                    case DisplayOrientation::PortraitInverted:
+                        touch_x = display.width() - 1 - touch_event.x;
+                        touch_y = display.height() - 1 - touch_event.y;
+                        break;
+                    case DisplayOrientation::Portrait:
+                        break;
                    }
                    const StickyScreen touched_screen =
                        home_selection_from_touch(display, touch_x, touch_y);

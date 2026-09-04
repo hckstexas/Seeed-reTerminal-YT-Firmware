@@ -8,7 +8,15 @@
     enum class DisplayOrientation {
       Landscape,
       Portrait,
+  LandscapeInverted,
+  PortraitInverted,
     };
+
+constexpr bool is_portrait_orientation(DisplayOrientation orientation)
+{
+  return orientation == DisplayOrientation::Portrait ||
+         orientation == DisplayOrientation::PortraitInverted;
+}
 
     class StickyDisplay {
     public:
@@ -18,8 +26,8 @@
       bool init();
       void set_orientation(DisplayOrientation orientation);
       DisplayOrientation orientation() const { return orientation_; }
-      int width() const { return orientation_ == DisplayOrientation::Portrait ? kHeight : kWidth; }
-      int height() const { return orientation_ == DisplayOrientation::Portrait ? kWidth : kHeight; }
+      int width() const { return is_portrait_orientation(orientation_) ? kHeight : kWidth; }
+      int height() const { return is_portrait_orientation(orientation_) ? kWidth : kHeight; }
       void clear(bool white = true);
       void draw_pixel(int x, int y, bool black = true);
       void draw_rect(int x, int y, int width, int height, bool black = true);

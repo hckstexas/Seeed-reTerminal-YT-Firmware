@@ -83,9 +83,21 @@
 
       int physical_x = x;
       int physical_y = y;
-      if (orientation_ == DisplayOrientation::Portrait) {
+      switch (orientation_) {
+      case DisplayOrientation::Landscape:
+          break;
+      case DisplayOrientation::Portrait:
           physical_x = kWidth - 1 - y;
           physical_y = x;
+          break;
+      case DisplayOrientation::LandscapeInverted:
+          physical_x = kWidth - 1 - x;
+          physical_y = kHeight - 1 - y;
+          break;
+      case DisplayOrientation::PortraitInverted:
+          physical_x = y;
+          physical_y = kHeight - 1 - x;
+          break;
       }
 
       uint8_t &byte = framebuffer_[physical_y * kStrideBytes + physical_x / 8];

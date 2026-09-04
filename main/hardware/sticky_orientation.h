@@ -31,8 +31,6 @@ private:
 
     i2c_master_dev_handle_t device_ = nullptr;
     DisplayOrientation orientation_ = DisplayOrientation::Landscape;
-    DisplayOrientation candidate_ = DisplayOrientation::Landscape;
-    TickType_t candidate_since_ = 0;
     TickType_t last_motion_sample_ = 0;
     int64_t yaw_microdegrees_ = 0;
     bool locked_ = false;
